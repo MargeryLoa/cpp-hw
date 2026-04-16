@@ -3,11 +3,8 @@
 #include <sstream>
 
 #include "equation_list.h"
+#include "student.h"
 
-EquatList::EquatList(void)
-{
-	mNext = nullptr;
-}
 
 EquatList::EquatList(Equation E)
 {
@@ -19,7 +16,7 @@ void EquatList::Add(Equation E)
 {
 	EquatList* C = this;
 	
-	if (C != nullptr && C->mNext == nullptr && C->mEquation.mA == 0)
+	if (C != nullptr && C->mNext == nullptr && C->mEquation.CheckBadEq())
 		C->mEquation = E;
 	else
 	{
@@ -29,11 +26,11 @@ void EquatList::Add(Equation E)
 	}
 }
 
-void EquatList::Print(void)
+void EquatList::Print()
 {
 	EquatList* C = this;
 
-	if (C != nullptr && C->mNext == nullptr && C->mEquation.mA == 0)
+	if (C == nullptr || (C != nullptr && C->mNext == nullptr && C->mEquation.CheckBadEq()))
 	{
 		std::cout << "List of Equations is empty\n";
 		return;
@@ -41,11 +38,10 @@ void EquatList::Print(void)
 
 	while (C->mNext != nullptr)
 	{
-		std::cout << C->mEquation.mA << " " << C->mEquation.mB << " " << C->mEquation.mC << std::endl;
+		C->mEquation.PrintEq();
 		C = C->mNext;
 	}
-	std::cout << C->mEquation.mA << " " << C->mEquation.mB << " " << C->mEquation.mC << std::endl;
-
+	C->mEquation.PrintEq();
 }
 
 void EquatList::ReadFile(std::string FileName)
@@ -64,15 +60,43 @@ void EquatList::ReadFile(std::string FileName)
 
 }
 
-int EquatList::SizeOfList(void)
+int EquatList::SizeOfList()
 {
 	EquatList* C = this;
 	int Num = 0;
 
-	if (C != nullptr && C->mNext == nullptr && C->mEquation.mA == 0)
+	if (C != nullptr && C->mNext == nullptr && C->mEquation.CheckBadEq())
 		return 0;
 	else
 		while (C->mNext != nullptr)
 			C = C->mNext, Num++;
 	return Num+1;
+}
+
+void EquatList::Remove()
+{
+	if (mEquation.CheckBadEq() && mNext == nullptr)
+		return;
+
+	if (mNext != nullptr)
+	{
+		mEquation = mNext->mEquation;
+		EquatList* toDelete = mNext;
+		mNext = mNext->mNext;
+		free(toDelete);
+	}
+	else
+	{
+		mEquation = Equation();
+		mNext = nullptr;
+	}
+
+}
+
+
+EquatList::~EquatList()
+{
+	while (mNext != nullptr) {
+		Remove();
+	}
 }

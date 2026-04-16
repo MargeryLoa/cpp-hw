@@ -5,22 +5,25 @@
 #pragma once
 class LetterQueue
 {
-public:
 	Letter mLetter;
-	LetterQueue* mNext;
+public:
+	LetterQueue* mNext = nullptr;
 
-	LetterQueue(void);
+	LetterQueue() = default;
 	LetterQueue(Letter L);
 
 	void Push(Student S, EquatList * EL);
-	void Pop(void); 
+	void Pop(); 
 	
-	void PrintList(void);
-	int FindMaxLen(void);
+	void PrintList();
+	int FindMaxLen();
 	void PrintTable(int RL);
 	void LoadTable(EquatList* EL);
 	void UpdateTable(EquatList* EL, LetterQueue* LQ);
 	
 	int FindStudent(Student* S);
+	void CheckOneStudent(EquatList* E);
+	
+	~LetterQueue();
 	//	void ReadFile(std::string FileName);
 };

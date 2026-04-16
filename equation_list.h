@@ -1,18 +1,24 @@
 #include <iostream>
+
 #include "equation.h"
+
 
 #pragma once
 class EquatList
 {
 public:
 	Equation mEquation;
-	EquatList* mNext;
+	EquatList* mNext = nullptr;
 
-	EquatList(void);
+	EquatList() = default;
 	EquatList(Equation E);
 
 	void Add(Equation E);
-	void Print(void);
+	void Remove();
+	
+	void Print();
 	void ReadFile(std::string FileName);
-	int SizeOfList(void);
+	int SizeOfList();
+
+	~EquatList();
 };

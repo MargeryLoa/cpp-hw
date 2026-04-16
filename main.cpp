@@ -19,11 +19,12 @@ static void PrintMenu(void)
 	std::cout << "9 - Вывод списка писем" << std::endl;
 	std::cout << "c - Очистка консоли" << std::endl;
 	std::cout << "q - Посмотреть решение уравнения у студента" << std::endl;
+	std::cout << "d - Удаление уравнения из списка(сверху)" << std::endl;
 
 }
 
 
-int main(void)
+int main()
 {
 	EquatList* TestE = new EquatList();
 	LetterQueue* NewLetters = new LetterQueue();
@@ -31,6 +32,9 @@ int main(void)
 
 	std::string *FileName = new std::string("");
 	Student* S = new Student();
+	std::string Name, Surname;
+	double G;
+
 	setlocale(LC_ALL, "Russian");
 	srand(time(0));
 	PrintMenu();
@@ -60,11 +64,13 @@ int main(void)
 			break;
 		case '4':
 			std::cout << "Введите имя студента: \n";
-			std::cin >> S->mName;
-			std::cout << "Введите фамилию студента: \n"; 
-			std::cin >> S->mSurname;
+			std::cin >> Name;
+			std::cout << "Введите фамилию студента: \n";
+			std::cin >> Surname;
 			std::cout << "Введите ожидаемую успеваемость студента(0 до 1): \n"; 
-			std::cin >> S->mGoodness;
+			std::cin >> G;
+			S = new Student(Name, Surname, G);
+
 			ReportTable->Push(*S, TestE);
 			NewLetters->Push(*S, TestE);
 			break;
@@ -89,37 +95,11 @@ int main(void)
 			PrintMenu();
 			break;
 		case 'q':
-			EquatList * C = TestE;
-			int NumE;
-			std::cout << "Введите имя студента: \n";
-			std::cin >> S->mName;
-			std::cout << "Введите фамилию студента: \n";
-			std::cin >> S->mSurname;
-		
-			if (ReportTable->FindStudent(S) == 0)
-				std::cout << "Студент в списке не найден\n";
-			else
-			{
-				t_compl X1, X2;
-
-				std::cout << "Введите номер уравнения: \n";
-				std::cin >> NumE;
-
-				for (int i = 1; i < NumE && C != nullptr; i++)
-					C = C->mNext;
-
-				std::cout << "Найдено уравнение: \n" << C->mEquation.mA << " * x ^ 2 + (" << C->mEquation.mB << ") * x + (" << C->mEquation.mC << ")\n";
-
-				if (S->SolveEquation(&X1, &X2, C->mEquation) == 0)
-					std::cout << "Решено неверно\n";
-				else
-				{
-					std::cout << "Решено верно\n";
-					std::cout << X1.Re << " + i * " << X1.Im << std::endl;
-					std::cout << X2.Re << " + i * " << X2.Im << std::endl;
-				}
-			}
-			
+			ReportTable->CheckOneStudent(TestE);
+			break;
+		case 'd':
+			TestE->Remove();
+			TestE->Print();
 			break;
 		}
 

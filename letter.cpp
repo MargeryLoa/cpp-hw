@@ -5,31 +5,26 @@
 
 #include "letter_queue.h"
 
-Letter::Letter(void)
+Letter::Letter()
 {
 	mSize = mReport = 0;
 }
 
 Letter::Letter(Student S, int NoE)
 {
-	mStudent.mName = S.mName;
-	mStudent.mSurname = S.mSurname;
-	mStudent.mGoodness = S.mGoodness;
+	mStudent = S;
+	
 	mSize = NoE;
 	mReport = 0;
 
 }
 
-void Letter::Print(void)
+void Letter::Print()
 {
-	std::cout << "Ученик: " << mStudent.mSurname << " " << mStudent.mName << " ";
+	std::cout << "Ученик: ";
+	mStudent.PrintStudent();
 	std::cout << mReport;
 	std::cout << std::endl;
-}
-
-LetterQueue::LetterQueue(void)
-{
-	mNext = nullptr;
 }
 
 LetterQueue::LetterQueue(Letter L)
@@ -61,7 +56,7 @@ void LetterQueue::Push(Student S, EquatList* EL)
 	}
 }
 
-void LetterQueue::Pop(void) 
+void LetterQueue::Pop() 
 {
 	if (mLetter.mSize == 0 && mNext == nullptr) 
 		return;
@@ -71,7 +66,7 @@ void LetterQueue::Pop(void)
 		mLetter = mNext->mLetter;
 		LetterQueue* toDelete = mNext;
 		mNext = mNext->mNext;
-		delete toDelete;
+		free(toDelete);
 	}
 	else 
 	{
@@ -80,11 +75,11 @@ void LetterQueue::Pop(void)
 	}
 }
 
-void LetterQueue::PrintList(void)
+void LetterQueue::PrintList()
 {
 	LetterQueue* C = this;
 
-	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.mName == "Aa") || (C == nullptr))
+	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.CheckZeroStudent()) || (C == nullptr))
 	{
 		std::cout << "List of Students is empty\n";
 		return;
@@ -92,19 +87,18 @@ void LetterQueue::PrintList(void)
 
 	while (C->mNext != nullptr)
 	{
-		std::cout << C->mLetter.mStudent.mSurname << " " << C->mLetter.mStudent.mName << " " << C->mLetter.mStudent.mGoodness << std::endl;
+		C->mLetter.mStudent.PrintStudent();
 		C = C->mNext;
 	}
-	std::cout << C->mLetter.mStudent.mSurname << " " << C->mLetter.mStudent.mName << " " << C->mLetter.mStudent.mGoodness << std::endl;
-
+	C->mLetter.mStudent.PrintStudent();
 }
 
-int LetterQueue::FindMaxLen(void)
+int LetterQueue::FindMaxLen()
 {
 	LetterQueue* C = this;
 	int Len = 0, MaxLen = 0;
 
-	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.mName == "Aa") || (C == nullptr))
+	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.CheckZeroStudent()) || (C == nullptr))
 	{
 		std::cout << "List of Students is empty\n";
 		return 0;
@@ -112,12 +106,12 @@ int LetterQueue::FindMaxLen(void)
 
 	while (C->mNext != nullptr)
 	{
-		Len = C->mLetter.mStudent.mName.length() + C->mLetter.mStudent.mSurname.length() + 1;
+		Len = C->mLetter.mStudent.mNameLen;
 		if (Len > MaxLen)
 			MaxLen = Len;
 		C = C->mNext;
 	}
-	Len = C->mLetter.mStudent.mName.length() + C->mLetter.mStudent.mSurname.length() + 1;
+	Len = C->mLetter.mStudent.mNameLen;
 	if (Len > MaxLen)
 		MaxLen = Len;
 	return MaxLen;
@@ -130,7 +124,7 @@ void LetterQueue::PrintTable(int RL)
 		RightWidth = std::to_string(RL).length(), 
 		TmpLen = 0;
 
-	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.mName == "Aa") || (C == nullptr))
+	if ((C != nullptr && C->mNext == nullptr && C->mLetter.mStudent.CheckZeroStudent()) || (C == nullptr))
 	{
 		std::cout << "Table is empty\n";
 		return;
@@ -142,8 +136,9 @@ void LetterQueue::PrintTable(int RL)
 
 	while (C != nullptr)
 	{
-		TmpLen = C->mLetter.mStudent.mName.length() + C->mLetter.mStudent.mSurname.length() + 1;
-		std::cout << "| " << C->mLetter.mStudent.mSurname << " " << C->mLetter.mStudent.mName;
+		TmpLen = C->mLetter.mStudent.mNameLen;
+		std::cout << "| ";
+		C->mLetter.mStudent.SimplePrintStudent();
 
 		for (int i = 0; i < LeftWidth - TmpLen; i++)
 			std::cout << " ";
@@ -189,9 +184,9 @@ void LetterQueue::UpdateTable(EquatList* EL, LetterQueue* LQ)
 	if (EL == nullptr || LQ == nullptr)
 		return;
 
-	while (!(C->mLetter.mStudent.mSurname == LQ->mLetter.mStudent.mSurname && C->mLetter.mStudent.mName == LQ->mLetter.mStudent.mName) && C != nullptr)
+	while (!(C->mLetter.mStudent == LQ->mLetter.mStudent) && C != nullptr)
 		C = C->mNext;
-	while (C != nullptr && LQ->mLetter.mStudent.mName != "Aa")
+	while (C != nullptr && LQ->mLetter.mStudent.CheckZeroStudent())
 	{
 		EquatList* Tmp = EL;
 		
@@ -211,7 +206,7 @@ int LetterQueue::FindStudent(Student* S)
 {
 	LetterQueue* C = this;
 
-	while (!(C->mLetter.mStudent.mSurname == S->mSurname && C->mLetter.mStudent.mName == S->mName) && C != nullptr)
+	while (!(C->mLetter.mStudent == *S) && C != nullptr)
 		C = C->mNext;
 
 	if (C != nullptr)
@@ -221,4 +216,51 @@ int LetterQueue::FindStudent(Student* S)
 	}
 
 	return 0;
+}
+
+void LetterQueue::CheckOneStudent(EquatList *E)
+{
+	Student* S = new Student();
+	EquatList* C = E;
+	int NumE;
+	std::string Name, Surname;
+
+	std::cout << "Введите имя студента: \n";
+	std::cin >> Name;
+	std::cout << "Введите фамилию студента: \n";
+	std::cin >> Surname;
+
+	S = new Student(Name, Surname, 0);
+
+	if (FindStudent(S) == 0)
+		std::cout << "Студент в списке не найден\n";
+	else
+	{
+		t_compl X1, X2;
+
+		std::cout << "Введите номер уравнения: \n";
+		std::cin >> NumE;
+
+		for (int i = 1; i < NumE && C != nullptr; i++)
+			C = C->mNext;
+
+		std::cout << "Найдено уравнение: ";
+		C->mEquation.PrintEq();
+
+		if (S->SolveEquation(&X1, &X2, C->mEquation) == 0)
+			std::cout << "Решено неверно\n";
+		else
+		{
+			std::cout << "Решено верно\n";
+			std::cout << X1.Re << " + i * " << X1.Im << std::endl;
+			std::cout << X2.Re << " + i * " << X2.Im << std::endl;
+		}
+	}
+
+}
+
+LetterQueue::~LetterQueue() {
+	while (!(mLetter.mSize == 0 && mNext == nullptr)) {
+		Pop();
+	}
 }

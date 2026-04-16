@@ -4,19 +4,23 @@
 
 #pragma once
 
-typedef struct
-{
-	double Re, Im;
-} t_compl;
-
 class Student
 {
-public:
 	std::string mName, mSurname;
+public:
 	double mGoodness;
+	int mNameLen;
 
-	Student(void);
+	Student();
 	Student(std::string Name, std::string Surname, double G);
 
 	int SolveEquation(t_compl* X1, t_compl* X2, Equation E);
+	
+	void PrintStudent();
+	void SimplePrintStudent();
+	int CheckZeroStudent();
+
+	Student& operator=(const Student& S);
+	//Student& operator=(const Student& S);
+	bool operator==(const Student& other) const;
 };
