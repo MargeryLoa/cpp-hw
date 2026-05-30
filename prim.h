@@ -26,7 +26,7 @@ class Primitive
 
 public:
     Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color, const std::vector<t_vec2>& vertices);
-    virtual ~Primitive();
+    virtual ~Primitive() = default;
 
     void Update(int windowWidth, int windowHeight);
     void Draw() const;

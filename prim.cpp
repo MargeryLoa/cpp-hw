@@ -22,14 +22,6 @@ Primitive::Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color
 {
 }
 
-/* Function for Primitive destructor
- * ARGS: None.
- * RETS: None.
- */
-Primitive::~Primitive()
-{
-}
-
 /* Function for updating position and handling window boundaries
  * ARGS:
  *  (int) - window width

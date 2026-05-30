@@ -15,10 +15,7 @@
   * RETS:
   *  (int) - exit code
   */
-int main(int argc, char** argv)
-{
-    Scene MyScene;
-    MyScene.Init(argc, argv);
+int main(int argc, char** argv) {
+    Scene::GetInstance().Init(argc, argv);
     return 0;
 }
-

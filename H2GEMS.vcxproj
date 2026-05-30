@@ -127,13 +127,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bonus.cpp" />
+    <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="prim.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="square.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bomb.h" />
+    <ClInclude Include="bonus.h" />
+    <ClInclude Include="game.h" />
     <ClInclude Include="prim.h" />
+    <ClInclude Include="recolor.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="square.h" />
   </ItemGroup>

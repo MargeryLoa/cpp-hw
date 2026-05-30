@@ -6,71 +6,47 @@
  */
 
 #pragma once
+#include "game.h"
 
-#include <vector>
-#include "prim.h"
 
-#define FSIZE 30        // grid size: 30x30
-
- // enum for bonus types
-enum BonusType {
-    BONUS_RECOLOR,      // recolor bonus
-    BONUS_BOMB          // bomb bonus
-};
-
-// struct for bonus data
-struct Bonus {
-    BonusType type;                 // type of bonus (recolor or bomb)
-    int sourceIndex;                // index of square where bonus originated
-    int targetIndex;                // index of target square
-    t_vec3 originalColor;           // original color of the source square
-    std::vector<int> bombIndices;   // indices affected by bomb bonus
-};
-
-class Primitive;
-
-// class for the game scene, grid, match handling and bonuses
-class Scene
-{
-    int mScrW = 900, mScrH = 900;          // screen width and height
-    std::vector<Primitive*> mPrimitives;    // all primitives in the scene
-    int mSelectedIndex = -1;                // index of currently selected square
-
+class Scene {
 public:
-    Scene() = default;
-    Scene(int W, int H);
-    ~Scene();
-
+    static Scene& GetInstance();          // синглтон
+    void Init(int argc, char** argv);
     void Display();
-    void Keyboard(unsigned char Key, int X, int Y);
-    void Timer(int value);
+    void Keyboard(unsigned char key, int x, int y);
+    void Timer(int val);
     void Reshape(int w, int h);
     void Mouse(int button, int state, int x, int y);
-    void Init(int argc, char** argv);
 
+    // статические обЄртки дл€ GLUT (только они остаютс€ статическими)
     static void StaticDisplay();
-    static void StaticKeyboard(unsigned char Key, int X, int Y);
-    static void StaticTimer(int value);
+    static void StaticKeyboard(unsigned char key, int x, int y);
+    static void StaticTimer(int val);
     static void StaticReshape(int w, int h);
-    static void SetCurrentScene(Scene* scene);
     static void StaticMouse(int button, int state, int x, int y);
 
-    void ProcessMatches();
-    static void StepMatchTimerCallback(int depth);
-
 private:
-    static Scene* mCurrentScene;    // current scene for static callbacks
+    Scene() = default;
+    ~Scene() = default;
+    Scene(const Scene&) = delete;
+    Scene& operator=(const Scene&) = delete;
 
-    void GenerateColorGrid(int grid[FSIZE][FSIZE], const std::vector<t_vec3>& colors);
-    bool FindAndMarkMatches();
-    void ApplyGravityAndRefill();
-    void StepMatchProcessing(int recursionDepth);
+    Game* m_game = nullptr;
+    int m_width = 900, m_height = 900;
+    int m_selectedIndex = -1;
 
-    std::vector<t_vec3> mColors;    // color palette
-    bool mProcessingMatches;        // flag to avoid recursive match processing
-
-    std::vector<Bonus> mPendingBonuses;
-    void TryDropBonus(int row, int col, const t_vec3& color);
-    void ApplyPendingBonuses();
+    // scene.h Ц добавить в private секцию
+    enum CascadePhase {
+        PHASE_FIND_MATCH,
+        PHASE_WAIT_AFTER_REMOVE,
+        PHASE_APPLY_BONUSES,
+        PHASE_WAIT_AFTER_BONUS,
+        PHASE_GRAVITY,
+        PHASE_WAIT_AFTER_GRAVITY,
+        PHASE_DONE
+    };
+    CascadePhase m_cascadePhase = PHASE_DONE;
+    void CascadeTimer(int value);
+    static void StaticCascadeTimer(int value);
 };
-
