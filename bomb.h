@@ -13,3 +13,4 @@ public:
     BombBonus(const std::vector<int>& indices);
     void Apply(Game* game) const override;
 };
+

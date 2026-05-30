@@ -19,3 +19,4 @@ int main(int argc, char** argv) {
     Scene::GetInstance().Init(argc, argv);
     return 0;
 }
+

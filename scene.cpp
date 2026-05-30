@@ -37,7 +37,6 @@ void Scene::Init(int argc, char** argv) {
     glDisable(GL_LIGHTING);
     glClearColor(0.9f, 0.87f, 0.88f, 1.0f);
 
-    // расчёт геометрии
     float minSide = std::min(m_width, m_height);
     float squareSize = minSide * 0.8f / Game::GRID_SIZE;
     float spacing = squareSize * 0.1f;
@@ -113,7 +112,6 @@ void Scene::Mouse(int button, int state, int x, int y) {
 
 void Scene::Keyboard(unsigned char key, int, int) {
     if (key == 27) exit(0);
-    // управление скоростью (демо) – оставлено для совместимости
     if (!m_game->GetSquares().empty()) {
         t_vec2 sp = m_game->GetSquares()[0]->GetSpeed();
         if (key == '+') { sp.x += 0.002f; sp.y += 0.002f; m_game->GetSquares()[0]->SetSpeed(sp); }
@@ -134,36 +132,30 @@ void Scene::Reshape(int w, int h) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-// статические обёртки
 void Scene::StaticDisplay() { GetInstance().Display(); }
 void Scene::StaticKeyboard(unsigned char k, int x, int y) { GetInstance().Keyboard(k, x, y); }
 void Scene::StaticTimer(int v) { GetInstance().Timer(v); }
 void Scene::StaticReshape(int w, int h) { GetInstance().Reshape(w, h); }
 void Scene::StaticMouse(int b, int s, int x, int y) { GetInstance().Mouse(b, s, x, y); }
 
-// scene.cpp – добавить после статических обёрток
 
 void Scene::CascadeTimer(int) {
     switch (m_cascadePhase) {
         case PHASE_FIND_MATCH:
             if (m_game->FindAndMarkMatches()) {
-                // Найдены и удалены группы – пауза 0.5 сек
                 m_cascadePhase = PHASE_WAIT_AFTER_REMOVE;
                 glutTimerFunc(500, StaticCascadeTimer, 0);
             } else {
-                // Нет больше матчей – завершаем каскад
                 m_cascadePhase = PHASE_DONE;
             }
             break;
 
         case PHASE_WAIT_AFTER_REMOVE:
             if (m_game->HasPendingBonuses()) {
-                // Применяем бонусы (они сразу действуют)
                 m_game->ApplyPendingBonuses();
                 m_cascadePhase = PHASE_WAIT_AFTER_BONUS;
                 glutTimerFunc(500, StaticCascadeTimer, 0);
             } else {
-                // Бонусов нет – сразу гравитация
                 m_game->ApplyGravityAndRefill();
                 m_cascadePhase = PHASE_WAIT_AFTER_GRAVITY;
                 glutTimerFunc(500, StaticCascadeTimer, 0);
@@ -171,16 +163,15 @@ void Scene::CascadeTimer(int) {
             break;
 
         case PHASE_WAIT_AFTER_BONUS:
-            // После действия бонусов – гравитация
             m_game->ApplyGravityAndRefill();
             m_cascadePhase = PHASE_WAIT_AFTER_GRAVITY;
             glutTimerFunc(500, StaticCascadeTimer, 0);
             break;
 
         case PHASE_WAIT_AFTER_GRAVITY:
-            // После гравитации – снова ищем матчи
+            
             m_cascadePhase = PHASE_FIND_MATCH;
-            CascadeTimer(0);  // немедленный переход к поиску (без дополнительной паузы)
+            CascadeTimer(0); 
             break;
 
         default:

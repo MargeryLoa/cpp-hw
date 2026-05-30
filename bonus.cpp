@@ -18,3 +18,4 @@ void BombBonus::Apply(Game* game) const {
     for (int idx : m_indices)
         game->DestroySquare(idx);
 }
+

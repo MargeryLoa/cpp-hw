@@ -11,7 +11,7 @@
 
 class Scene {
 public:
-    static Scene& GetInstance();          // синглтон
+    static Scene& GetInstance();         
     void Init(int argc, char** argv);
     void Display();
     void Keyboard(unsigned char key, int x, int y);
@@ -19,7 +19,6 @@ public:
     void Reshape(int w, int h);
     void Mouse(int button, int state, int x, int y);
 
-    // статические обЄртки дл€ GLUT (только они остаютс€ статическими)
     static void StaticDisplay();
     static void StaticKeyboard(unsigned char key, int x, int y);
     static void StaticTimer(int val);
@@ -36,7 +35,6 @@ private:
     int m_width = 900, m_height = 900;
     int m_selectedIndex = -1;
 
-    // scene.h Ц добавить в private секцию
     enum CascadePhase {
         PHASE_FIND_MATCH,
         PHASE_WAIT_AFTER_REMOVE,
@@ -50,3 +48,4 @@ private:
     void CascadeTimer(int value);
     static void StaticCascadeTimer(int value);
 };
+

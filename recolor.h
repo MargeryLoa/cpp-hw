@@ -15,3 +15,4 @@ public:
     RecolorBonus(int target, const t_vec3& color, const std::vector<int>& extra);
     void Apply(Game* game) const override;
 };
+

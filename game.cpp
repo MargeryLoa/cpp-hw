@@ -238,11 +238,8 @@ void Game::DestroySquare(int idx) {
 }
 
 void Game::ApplyPendingBonuses() {
-    for (auto* b : m_pendingBonuses) {
-        // вывод отладочной информации
-        // для простоты оставим как было, но можно реализовать метод Print в бонусах
+    for (auto* b : m_pendingBonuses) 
         b->Apply(this);
-    }
     ClearPendingBonuses();
 }
 
@@ -253,7 +250,6 @@ void Game::ApplyPendingBonuses() {
 void Game::ProcessMatches() {
     if (m_processing) return;
     m_processing = true;
-    // Циклическая обработка матчей (упрощённо, без пауз для демонстрации)
     while (FindAndMarkMatches()) {
         ApplyGravityAndRefill();
     }
@@ -295,3 +291,4 @@ bool Game::IsValidMatch(int r1, int c1, int r2, int c2) {
     t_vec3 col2 = s2->GetColor();
     return (col1.r == col2.r && col1.g == col2.g && col1.b == col2.b);
 }
+

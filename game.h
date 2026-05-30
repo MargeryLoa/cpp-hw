@@ -7,16 +7,16 @@ class Square;
 
 class Game {
 public:
-    static constexpr int GRID_SIZE = 20;   // именованная константа
+    static constexpr int GRID_SIZE = 20;
 
     Game(int screenW, int screenH);
     ~Game();
 
     void InitGrid(float startX, float startY, float step, float squareSize, const std::vector<t_vec3>& colors);
     void SwapSquares(int idx1, int idx2);
-    void ProcessMatches();                 // запуск цикла удалений/гравитации/бонусов
-    void UpdateGravityAndRefill();         // публичная для вызова из таймера
-    bool FindAndMarkMatches();             // возвращает true, если что-то удалено
+    void ProcessMatches();              
+    void UpdateGravityAndRefill();      
+    bool FindAndMarkMatches();         
     void ApplyPendingBonuses();
     void ApplyGravityAndRefill();    
     void DropBonus(int row, int col, const t_vec3& color);
@@ -36,7 +36,6 @@ private:
     std::vector<Bonus*> m_pendingBonuses;
     bool m_processing = false;
 
-    // вспомогательные приватные методы
     void MarkMatches(bool marked[GRID_SIZE][GRID_SIZE]);
     bool IsValidMatch(int r1, int c1, int r2, int c2);
     
@@ -44,3 +43,4 @@ private:
     void FindBombArea(int tgtRow, int tgtCol, std::vector<int>& out);
     std::vector<std::vector<int>> GenerateColorIndices(const std::vector<t_vec3>& colors);
 };
+
