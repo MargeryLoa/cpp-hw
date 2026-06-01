@@ -2,12 +2,13 @@
  * FILE: prim.h - for base primitive class and vector types
  * PROGRAMMER: Baydakova M.
  * GROUP: 5030102/40004
- * UPDATE: 28.05.26
+ * UPDATE: 31.05.2026
  */
 
 #pragma once
 
 #include <vector>
+#include <string>
 
  // struct for 2D vector coordinates
 typedef struct {
@@ -25,7 +26,9 @@ class Primitive
     bool mToDraw;           // flag indicating whether primitive should be drawn
 
 public:
-    Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color, const std::vector<t_vec2>& vertices);
+    Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color, const std::string& name, const std::vector<t_vec2>& vertices);
+    Primitive(const t_vec2& pos, const t_vec3& color, const std::string& name, const std::vector<t_vec2>& vertices);
+
     virtual ~Primitive() = default;
 
     void Update(int windowWidth, int windowHeight);
@@ -40,6 +43,8 @@ public:
     void SetPosition(const t_vec2& pos) { mPosition = pos; }
     t_vec2 GetPosition() const { return mPosition; }
 
+    const std::string& GetName() const { return mName; } // returns shape name
+
     bool IsToDraw() const { return mToDraw; }
     void SetToDraw(bool draw) { mToDraw = draw; }
 
@@ -49,6 +54,7 @@ protected:
     t_vec2 mPosition;               // current position
     t_vec2 mSpeed;                  // velocity vector
     t_vec3 mColor;                  // color
+    std::string mName;              // primitive type BALL|CAR|BLOCK
     std::vector<t_vec2> mVertex;    // local vertices relative to position
 };
 

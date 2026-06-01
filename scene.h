@@ -1,17 +1,17 @@
-/* GEMS CPP-project
- * FILE: scene.h - for match-3 scene management
+/* ARCA CPP-project
+ * FILE: scene.h - for scene management
  * PROGRAMMER: Baydakova M.
  * GROUP: 5030102/40004
- * UPDATE: 28.05.26
+ * UPDATE: 31.05.2026
  */
 
 #pragma once
-#include "game.h"
 
+#include "game.h"
 
 class Scene {
 public:
-    static Scene& GetInstance();         
+    static Scene& GetInstance();
     void Init(int argc, char** argv);
     void Display();
     void Keyboard(unsigned char key, int x, int y);
@@ -32,20 +32,10 @@ private:
     Scene& operator=(const Scene&) = delete;
 
     Game* m_game = nullptr;
+
     int m_width = 900, m_height = 900;
     int m_selectedIndex = -1;
-
-    enum CascadePhase {
-        PHASE_FIND_MATCH,
-        PHASE_WAIT_AFTER_REMOVE,
-        PHASE_APPLY_BONUSES,
-        PHASE_WAIT_AFTER_BONUS,
-        PHASE_GRAVITY,
-        PHASE_WAIT_AFTER_GRAVITY,
-        PHASE_DONE
-    };
-    CascadePhase m_cascadePhase = PHASE_DONE;
-    void CascadeTimer(int value);
-    static void StaticCascadeTimer(int value);
+    std::vector<t_vec3> mBlockPalette;
+    
 };
 

@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f58c351b-4d8e-4f9d-b3c9-6f858af81102}</ProjectGuid>
-    <RootNamespace>H2GEMS</RootNamespace>
+    <ProjectGuid>{731b176b-c62d-4be3-b4a3-5f38938e03c3}</ProjectGuid>
+    <RootNamespace>H3ARC</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -74,7 +74,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -127,21 +127,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ball.h" />
     <ClCompile Include="bonus.cpp" />
+    <ClCompile Include="bonus_types.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="prim.cpp" />
+    <ClCompile Include="prim_units.cpp" />
     <ClCompile Include="scene.cpp" />
-    <ClCompile Include="square.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bomb.h" />
+    <None Include="scene.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="block.h" />
     <ClInclude Include="bonus.h" />
+    <ClInclude Include="carriage.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="prim.h" />
-    <ClInclude Include="recolor.h" />
-    <ClInclude Include="scene.h" />
-    <ClInclude Include="square.h" />
+    <ClInclude Include="resize.h" />
+    <ClInclude Include="snd_ball.h" />
+    <ClInclude Include="snd_bottom.h" />
+    <ClInclude Include="sp_down.h" />
+    <ClInclude Include="stuck.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,7 +2,7 @@
  * FILE: prim.cpp - implementation of base primitive class
  * PROGRAMMER: Baydakova M.
  * GROUP: 5030102/40004
- * UPDATE: 28.05.26
+ * UPDATE: 31.05.2026
  */
 
 #include "prim.h"
@@ -17,10 +17,24 @@
   *  (const std::vector<t_vec2>&) - local vertex coordinates
   * RETS: None.
   */
-Primitive::Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color, const std::vector<t_vec2>& vertices)
-    : mPosition(pos), mSpeed(speed), mColor(color), mVertex(vertices), mToDraw(true)
+Primitive::Primitive(const t_vec2& pos, const t_vec2& speed, const t_vec3& color, const std::string& name, const std::vector<t_vec2>& vertices)
+    : mPosition(pos), mSpeed(speed), mColor(color), mName(name), mVertex(vertices), mToDraw(true)
 {
 }
+
+/* Function for motionless Primitive constructor
+ * ARGS:
+ *  (const t_vec2&) - initial position
+ *  (const t_vec3&) - color
+ *  (const std::vector<t_vec2>&) - local vertex coordinates
+ * RETS: None.
+ */
+Primitive::Primitive(const t_vec2& pos, const t_vec3& color, const std::string& name, const std::vector<t_vec2>& vertices)
+    : mPosition(pos), mColor(color), mName(name), mVertex(vertices), mToDraw(true)
+{
+    mSpeed.x = mSpeed.y = 0;
+}
+
 
 /* Function for updating position and handling window boundaries
  * ARGS:
@@ -77,4 +91,3 @@ void Primitive::Draw() const
     }
     glEnd();
 }
-

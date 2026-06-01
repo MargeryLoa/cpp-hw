@@ -1,294 +1,309 @@
-﻿#include "game.h"
-#include "square.h"
+﻿/* GEMS CPP-project
+ * FILE: game.h - for game logic implementation
+ * PROGRAMMER: Baydakova M.
+ * GROUP: 5030102/40004
+ * UPDATE: 31.05.2026
+ */
+
+#define IsIn(A, B, E) (A >= B && A <= E)
+
+#include "game.h"
 #include "bonus.h"
-#include "bomb.h"
-#include "recolor.h"
+#include "stuck.h"
+#include "snd_bottom.h"
+#include "snd_ball.h"
+#include "resize.h"
+#include "sp_down.h"
+
+
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 
-Game::Game(int w, int h) { (void)w; (void)h; }
-Game::~Game() {
-    for (auto* sq : m_squares) delete sq;
-    for (auto* b : m_pendingBonuses) delete b;
+Game::Game(int w, int h, const std::vector<t_vec3>& BlockPalette) 
+{ 
+    (void)w; 
+    (void)h; 
+    mBlockPalette = BlockPalette;
 }
 
-/* Function for generating a grid of color indices without three identical in a row
- * ARGS:
- *  (const std::vector<t_vec3>&) - color palette
- * RETS:
- *  (std::vector<std::vector<int>>) - 2D vector of color indices (GRID_SIZE x GRID_SIZE)
- */
-std::vector<std::vector<int>> Game::GenerateColorIndices(const std::vector<t_vec3>& colors) {
-    std::vector<std::vector<int>> grid(GRID_SIZE, std::vector<int>(GRID_SIZE, -1));
-
-    auto isValid = [&](int row, int col, int idx) -> bool {
-        // Check horizontal
-        if (col >= 2 && grid[row][col - 1] == idx && grid[row][col - 2] == idx)
-            return false;
-        // Check vertical
-        if (row >= 2 && grid[row - 1][col] == idx && grid[row - 2][col] == idx)
-            return false;
-        return true;
-        };
-
-    for (int row = 0; row < GRID_SIZE; ++row) {
-        for (int col = 0; col < GRID_SIZE; ++col) {
-            std::vector<int> available;
-            for (size_t i = 0; i < colors.size(); ++i)
-                available.push_back((int)i);
-            std::random_shuffle(available.begin(), available.end());
-
-            int chosen = -1;
-            for (int idx : available) {
-                if (isValid(row, col, idx)) {
-                    chosen = idx;
-                    break;
-                }
-            }
-            if (chosen == -1) chosen = available[0];
-            grid[row][col] = chosen;
-        }
-    }
-    return grid;
+Game::~Game() {
+    for (auto* sq : mBlocks) delete sq;
+    for (auto* sq : mCars) delete sq;
+    for (auto* sq : mBalls) delete sq;
 }
 
 /* Function for initializing the grid with squares using pre‑generated color indices
  * ARGS:
  *  (float) - start X coordinate (leftmost center)
  *  (float) - start Y coordinate (bottommost center)
- *  (float) - step between adjacent square centers
- *  (float) - side length of each square
  *  (const std::vector<t_vec3>&) - color palette
  * RETS: None.
  */
-void Game::InitGrid(float startX, float startY, float step, float squareSize,
-    const std::vector<t_vec3>& palette) {
-    m_palette = palette;
-    // Generate color indices avoiding three in a row
-    auto colorIndices = GenerateColorIndices(palette);
+void Game::InitObjects(float startX, float startY, t_vec2 CarPos, const std::vector<t_vec3>& BlockPalette, int FloorLength)
+{
+    mPlayer = new Player();
 
-    for (int row = 0; row < GRID_SIZE; ++row) {
-        for (int col = 0; col < GRID_SIZE; ++col) {
-            t_vec2 pos = { startX + col * step, startY + row * step };
-            t_vec3 color = palette[colorIndices[row][col]];
-            m_squares.push_back(new Square(pos, { 0,0 }, color, squareSize));
+    float stepW = BLOCK_W + DIST;
+    float stepH = BLOCK_H + DIST;
+    
+    for (int row = 0; row < GRID_H; ++row) {
+        for (int col = 0; col < GRID_W; ++col) {
+            t_vec2 pos = { startX + col * stepW, startY + row * stepH };
+
+            int Health = rand() % 3 + 2;
+            int TypeU = rand() % 10;
+            if (TypeU)
+                mBlocks.push_back(new Block(pos, BlockPalette[Health], BLOCK_W, BLOCK_H, (BlockType)(rand() % 3 + 1), Health+1));
+            else 
+                mBlocks.push_back(new Block(pos, BlockPalette[5], BLOCK_W, BLOCK_H, UNBREAKING, Health + 1));
+        }
+    }
+
+    mCars.push_back(new Carriage(CarPos, { 15, 0 }, { 0, 0, 100 }, 2 * BLOCK_W, 1.5 * BLOCK_H));
+    mCars.push_back(new Carriage({0, 100}, {0, 0}, {0, 0, 50}, FloorLength, BLOCK_H));
+    mCars[1]->SetToDraw(0);
+    mBalls.push_back(new Ball({450, 450}, {5, 5}, {200, 0, 0}, 15, 8));
+}
+
+void Game::MoveCar(int flag, int Board)
+{
+    t_vec2 Pos = mCars[0]->GetPosition(),
+           Speed = mCars[0]->GetSpeed();
+
+    if ((flag == 1 && Pos.x <= Board - mCars[0]->GetWidth()) || (flag == -1 && Pos.x >= Board))
+        Pos.x += (Speed.x * flag);
+
+    mCars[0]->SetPosition(Pos);
+}
+
+int Game::CheckTouch(t_vec2 BallPos, t_vec2 BallSpeed, t_vec2 ObjectPos, float Radius, float W, float H)
+{
+    if (IsIn(BallPos.x, ObjectPos.x, ObjectPos.x + W))
+    {
+        if (BallSpeed.y <= 0 && BallPos.y == ObjectPos.y + H + Radius)
+            return 1;
+        else if (BallSpeed.y >= 0 && BallPos.y == ObjectPos.y - Radius)
+            return 1;
+    }
+
+    if (IsIn(BallPos.y, ObjectPos.y, ObjectPos.y + H))
+    {
+        if (BallSpeed.x <= 0 && BallPos.x == ObjectPos.x + W + Radius)
+            return -1;
+        else if (BallSpeed.x >= 0 && BallPos.x == ObjectPos.x - Radius)
+            return -1;
+    }
+    return 0;
+}
+
+static int CheckAndResolveCollision(t_vec2& center, float radius,
+    const t_vec2& rectPos, float w, float h)
+{
+    float closestX = std::max(rectPos.x, std::min(center.x, rectPos.x + w));
+    float closestY = std::max(rectPos.y, std::min(center.y, rectPos.y + h));
+    float dx = center.x - closestX;
+    float dy = center.y - closestY;
+    float dist = std::sqrt(dx * dx + dy * dy);
+
+    if (dist >= radius) return 0;
+
+    float overlap = radius - dist;
+    if (dist < 0.0001f) dist = 0.0001f;
+    float nx = dx / dist;
+    float ny = dy / dist;
+    center.x += nx * overlap;
+    center.y += ny * overlap;
+    if (std::fabs(dx) > std::fabs(dy))
+        return -1;
+    else
+        return 1; 
+}
+
+void Game::CheckCollideCar()
+{
+    for (size_t i = 0; i < mBalls.size(); ++i)
+    {
+        for (size_t j = 0; j < mCars.size(); ++j)
+        {
+            if (!mCars[j]->IsToDraw()) continue;
+
+            t_vec2 ballPos = mBalls[i]->GetPosition();
+            int side = CheckAndResolveCollision(ballPos, mBalls[i]->GetRadius(),
+                mCars[j]->GetPosition(),
+                mCars[j]->GetWidth(), mCars[j]->GetHeight());
+            if (side != 0)
+            {
+                mBalls[i]->SetPosition(ballPos);
+                if (j == 1) mCars[j]->SetToDraw(false); 
+
+                t_vec2 spd = mBalls[i]->GetSpeed();
+                if (side == 1)
+                    mBalls[i]->SetSpeed({ spd.x, -spd.y });
+                else
+                    mBalls[i]->SetSpeed({ -spd.x, spd.y });
+            }
         }
     }
 }
-void Game::SwapSquares(int idx1, int idx2) {
-    Square* a = m_squares[idx1];
-    Square* b = m_squares[idx2];
-    t_vec3 tmp = a->GetColor();
-    a->SetColor(b->GetColor());
-    b->SetColor(tmp);
-    a->SetToDraw(true);
-    b->SetToDraw(true);
+
+void Game::ThrowBonus(const t_vec2& pos)
+{
+    int BT = rand() % 5;
+
+    switch (BT)
+    {
+    case 0:
+        mBonuses.push_back(new ResizeBonus(pos));
+        break;
+    case 1:
+        mBonuses.push_back(new SpeedDownBonus(pos)); 
+        break;
+    case 2:
+        mBonuses.push_back(new SecondBallBonus(pos));
+        break;
+    case 3:
+        mBonuses.push_back(new SecondBottomBonus(pos));
+        break;
+    case 4:
+        mBonuses.push_back(new StuckBonus(pos));
+        break;
+    }
 }
 
-bool Game::FindAndMarkMatches() {
-    bool marked[GRID_SIZE][GRID_SIZE] = { false };
-    auto eq = [](const t_vec3& a, const t_vec3& b) {
-        return a.r == b.r && a.g == b.g && a.b == b.b;
-        };
+void Game::CollideBlock(int BIndex, int BlockIndex)
+{
+    BlockType T = mBlocks[BlockIndex]->GetType();
+    if (T != UNBREAKING)
+    {
+        int H = mBlocks[BlockIndex]->GetHealth() - 1;
+        mBlocks[BlockIndex]->SetHealth(H);
 
-    // горизонталь
-    for (int r = 0; r < GRID_SIZE; ++r) {
-        int len = 1;
-        for (int c = 1; c <= GRID_SIZE; ++c) {
-            if (c < GRID_SIZE && m_squares[r * GRID_SIZE + c]->IsToDraw() &&
-                m_squares[r * GRID_SIZE + c - 1]->IsToDraw() &&
-                eq(m_squares[r * GRID_SIZE + c]->GetColor(), m_squares[r * GRID_SIZE + c - 1]->GetColor()))
-                ++len;
-            else {
-                if (len >= 3) {
-                    printf("Deleted Group ");
-                    for (int cc = c - len; cc < c; ++cc) {
-                        printf("X:%d,Y:%d ", cc, r);
-                        marked[r][cc] = true;
-                    }
-                    printf("\n");
+        if (mBlocks[BlockIndex]->GetHealth() == 0)
+        {
+            mBlocks[BlockIndex]->SetToDraw(0);
+            if (T == BONUS)
+            {
+                t_vec2 Pos = mBlocks[BlockIndex]->GetPosition();
+                Pos.y -= (mBlocks[BlockIndex]->GetWidth() / 2);
+                ThrowBonus(Pos);
+            }//Falls Bonus;
+        }
+        else
+            mBlocks[BlockIndex]->SetColor(mBlockPalette[H - 1]);
+
+        if (T == SPEEDUP)
+        {
+            t_vec2 OldSpeed = mBalls[BIndex]->GetSpeed();
+
+            OldSpeed.x *= 1.01;
+            OldSpeed.y *= 1.01;
+
+            mBalls[BIndex]->SetSpeed(OldSpeed);
+        }
+    }
+}
+
+void Game::CheckCollideBlock()
+{
+    for (size_t i = 0; i < mBalls.size(); ++i)
+    {
+        for (size_t j = 0; j < mBlocks.size(); ++j)
+        {
+            if (!mBlocks[j]->IsToDraw()) continue;
+
+            t_vec2 ballPos = mBalls[i]->GetPosition();
+            int side = CheckAndResolveCollision(ballPos, mBalls[i]->GetRadius(),
+                mBlocks[j]->GetPosition(),
+                mBlocks[j]->GetWidth(), mBlocks[j]->GetHeight());
+            if (side != 0)
+            {
+                mBalls[i]->SetPosition(ballPos);
+
+                CollideBlock(static_cast<int>(i), static_cast<int>(j));
+                mPlayer->ChangeScore(1);
+
+                t_vec2 spd = mBalls[i]->GetSpeed();
+                if (side == 1)
+                    mBalls[i]->SetSpeed({ spd.x, -spd.y });
+                else if (side == -1)
+                    mBalls[i]->SetSpeed({ -spd.x, spd.y });
+            }
+        }
+    }
+}
+void Game::CheckLoose()
+{
+    for (int i = 0; i < mBalls.size(); i++)
+        if (mBalls[i]->GetPosition().y == mBalls[i]->GetRadius())
+            mPlayer->ChangeScore(-1);
+}
+
+void Game::FreeBonus()
+{
+    for (auto it = mBonuses.begin(); it != mBonuses.end(); )
+    {
+        if ((*it)->IsToDelete())
+        {
+            delete* it;              
+            it = mBonuses.erase(it); 
+        }
+        else
+            ++it;
+    }
+}
+
+void Game::ActBonus()
+{
+    for (int i = 0; i < mBonuses.size(); i++)
+        if (mBonuses[i]->IsToAct())
+            mBonuses[i]->Act(mBalls, mCars);
+}
+
+
+void Game::CheckCollide2Balls()
+{
+    for (int i = 0; i < mBalls.size(); i++)
+        for (int j = i + 1; j < mBalls.size(); j++) 
+        {
+            Ball* ball1 = mBalls[i];
+            Ball* ball2 = mBalls[j];
+
+            t_vec2 pos1 = ball1->GetPosition();
+            t_vec2 pos2 = ball2->GetPosition();
+            float r1 = ball1->GetRadius();
+            float r2 = ball2->GetRadius();
+
+            float dx = pos2.x - pos1.x;
+            float dy = pos2.y - pos1.y;
+            float dist = sqrt(dx * dx + dy * dy);
+            float minDist = r1 + r2;
+
+            if (dist < minDist)
+            {
+                float nx = dx / dist;
+                float ny = dy / dist;
+
+                t_vec2 v1 = ball1->GetSpeed();
+                t_vec2 v2 = ball2->GetSpeed();
+
+                float v_rel_n = (v2.x - v1.x) * nx + (v2.y - v1.y) * ny;
+
+                if (v_rel_n < 0)
+                {
+                    float e = 1.0f;
+                    float imp = (1 + e) * v_rel_n / 2.0f;
+
+                    ball1->SetSpeed({ v1.x + imp * nx, v1.y + imp * ny });
+                    ball2->SetSpeed({ v2.x - imp * nx, v2.y - imp * ny });
                 }
-                len = 1;
+
+                float overlap = minDist - dist;
+                float correction = overlap / 2.0f;
+                ball1->SetPosition({ pos1.x - nx * correction, pos1.y - ny * correction });
+                ball2->SetPosition({ pos2.x + nx * correction, pos2.y + ny * correction });
             }
         }
-    }
-    // вертикаль
-    for (int c = 0; c < GRID_SIZE; ++c) {
-        int len = 1;
-        for (int r = 1; r <= GRID_SIZE; ++r) {
-            if (r < GRID_SIZE && m_squares[(r - 1) * GRID_SIZE + c]->IsToDraw() &&
-                m_squares[r * GRID_SIZE + c]->IsToDraw() &&
-                eq(m_squares[(r - 1) * GRID_SIZE + c]->GetColor(), m_squares[r * GRID_SIZE + c]->GetColor()))
-                ++len;
-            else {
-                if (len >= 3) {
-                    printf("Deleted Group ");
-                    for (int rr = r - len; rr < r; ++rr) {
-                        printf("X:%d,Y:%d ", c, rr);
-                        marked[rr][c] = true;
-                    }
-                    printf("\n");
-                }
-                len = 1;
-            }
-        }
-    }
-
-    bool any = false;
-    for (int r = 0; r < GRID_SIZE; ++r)
-        for (int c = 0; c < GRID_SIZE; ++c)
-            if (marked[r][c]) {
-                any = true;
-                m_squares[r * GRID_SIZE + c]->SetToDraw(false);
-                DropBonus(r, c, m_squares[r * GRID_SIZE + c]->GetColor());
-            }
-    return any;
-}
-
-void Game::ApplyGravityAndRefill() {
-    for (int col = 0; col < GRID_SIZE; ++col) {
-        std::vector<t_vec3> visible;
-        for (int row = 0; row < GRID_SIZE; ++row) {
-            Square* sq = m_squares[row * GRID_SIZE + col];
-            if (sq->IsToDraw()) visible.push_back(sq->GetColor());
-        }
-        int newRow = 0;
-        for (size_t i = 0; i < visible.size(); ++i) {
-            Square* sq = m_squares[newRow * GRID_SIZE + col];
-            sq->SetColor(visible[i]);
-            sq->SetToDraw(true);
-            ++newRow;
-        }
-        for (int row = newRow; row < GRID_SIZE; ++row) {
-            Square* sq = m_squares[row * GRID_SIZE + col];
-            sq->SetColor(m_palette[rand() % m_palette.size()]);
-            sq->SetToDraw(true);
-        }
-    }
-}
-
-void Game::DropBonus(int row, int col, const t_vec3& origColor) {
-    if (rand() % 15 != 0) return; // шанс 1/15
-    // поиск цели в радиусе 3
-    std::vector<int> candidates;
-    for (int dr = -3; dr <= 3; ++dr)
-        for (int dc = -3; dc <= 3; ++dc) {
-            if (dr == 0 && dc == 0) continue;
-            int nr = row + dr, nc = col + dc;
-            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int idx = nr * GRID_SIZE + nc;
-                if (m_squares[idx]->IsToDraw()) candidates.push_back(idx);
-            }
-        }
-    if (candidates.empty()) return;
-    int target = candidates[rand() % candidates.size()];
-    int tgtRow = target / GRID_SIZE, tgtCol = target % GRID_SIZE;
-
-    if (rand() % 2 == 0) { // Recolor
-        std::vector<int> extra;
-        FindExtraCandidates(tgtRow, tgtCol, target, extra);
-        m_pendingBonuses.push_back(new RecolorBonus(target, origColor, extra));
-    }
-    else { // Bomb
-        std::vector<int> area;
-        FindBombArea(tgtRow, tgtCol, area);
-        if (!area.empty()) m_pendingBonuses.push_back(new BombBonus(area));
-    }
-}
-
-void Game::FindExtraCandidates(int tgtRow, int tgtCol, int targetIdx, std::vector<int>& out) {
-    for (int dr = -3; dr <= 3; ++dr)
-        for (int dc = -3; dc <= 3; ++dc) {
-            if (dr == 0 && dc == 0) continue;
-            int nr = tgtRow + dr, nc = tgtCol + dc;
-            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int idx = nr * GRID_SIZE + nc;
-                if (!m_squares[idx]->IsToDraw()) continue;
-                int dist = std::abs(nr - tgtRow) + std::abs(nc - tgtCol);
-                if (idx != targetIdx && dist > 1)  // не сосед
-                    out.push_back(idx);
-            }
-        }
-    std::random_shuffle(out.begin(), out.end());
-    if (out.size() > 2) out.resize(2);
-}
-
-void Game::FindBombArea(int tgtRow, int tgtCol, std::vector<int>& out) {
-    for (int dr = -3; dr <= 3; ++dr)
-        for (int dc = -3; dc <= 3; ++dc) {
-            int nr = tgtRow + dr, nc = tgtCol + dc;
-            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                int idx = nr * GRID_SIZE + nc;
-                if (m_squares[idx]->IsToDraw()) out.push_back(idx);
-            }
-        }
-    std::random_shuffle(out.begin(), out.end());
-    if (out.size() > 5) out.resize(5);
-}
-
-void Game::RecolorSquare(int idx, const t_vec3& newColor) {
-    m_squares[idx]->SetColor(newColor);
-    m_squares[idx]->SetToDraw(true);
-}
-
-void Game::DestroySquare(int idx) {
-    m_squares[idx]->SetToDraw(false);
-}
-
-void Game::ApplyPendingBonuses() {
-    for (auto* b : m_pendingBonuses) 
-        b->Apply(this);
-    ClearPendingBonuses();
-}
-
-/* Function for starting the match processing after a swap
- * ARGS: None.
- * RETS: None.
- */
-void Game::ProcessMatches() {
-    if (m_processing) return;
-    m_processing = true;
-    while (FindAndMarkMatches()) {
-        ApplyGravityAndRefill();
-    }
-    m_processing = false;
-}
-
-/* Function for public wrapper to apply gravity and refill
- * ARGS: None.
- * RETS: None.
- */
-void Game::UpdateGravityAndRefill() {
-    ApplyGravityAndRefill();
-}
-
-/* Function for marking matches (unused, kept for interface completeness)
- * ARGS:
- *  (bool[GRID_SIZE][GRID_SIZE]) - output marked array (ignored)
- * RETS: None.
- */
-void Game::MarkMatches(bool marked[GRID_SIZE][GRID_SIZE]) {
-    (void)marked; // suppress unused parameter warning
-    // Actual marking logic is embedded in FindAndMarkMatches
-}
-
-/* Function for checking if two squares form a valid match (same color and visible)
- * ARGS:
- *  (int) - row of first square
- *  (int) - column of first square
- *  (int) - row of second square
- *  (int) - column of second square
- * RETS:
- *  (bool) - true if both squares are visible and have the same color
- */
-bool Game::IsValidMatch(int r1, int c1, int r2, int c2) {
-    Square* s1 = m_squares[r1 * GRID_SIZE + c1];
-    Square* s2 = m_squares[r2 * GRID_SIZE + c2];
-    if (!s1->IsToDraw() || !s2->IsToDraw()) return false;
-    t_vec3 col1 = s1->GetColor();
-    t_vec3 col2 = s2->GetColor();
-    return (col1.r == col2.r && col1.g == col2.g && col1.b == col2.b);
 }
 
